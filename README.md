@@ -11,3 +11,5 @@ Upgrades coming soon:
 - Save code from each attempt to its own file in case you liked something you saw during dev that you want to use later
 - ChatGPT controlled terminal commands for downloading any necessary files, packages, libraries, etc (User has final yes or no say on whether the command executes or not)
 - Automated internet research when stuck
+- GUI
+- Help me think of more...
