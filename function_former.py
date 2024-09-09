@@ -34,14 +34,14 @@ def handle_user_input(code):
         except:
             print('no prompt given')
             break
-        user_input = input("Enter additional information: ")
+        user_input = input("Enter additional information or say END CHAT to end this chat: ")
     
         if user_input.lower() == 'end chat':
             break
         else:
             pass
         #chatgpt response to input based on chat_history
-        prompt = "Im trying to do this: "+initial_request+" \n\n CHAT HISTORY (oldest to newest): \n\n "+"\n".join(chat_history) +" \n\n ACTUAL PROMPT: "+user_input+" \n\n CURRENT CODE: \n\n " + code
+        prompt = "Im trying to do this: "+initial_request+" \n\n CURRENT CODE: \n\n " + code+" \n\n CHAT HISTORY (oldest to newest): \n\n "+"\n".join(chat_history) +" \n\n ACTUAL PROMPT: "+user_input
         payload = {
             "model": "gpt-4o-mini",
             "messages": [
@@ -325,9 +325,11 @@ def validate_and_run_code(goal_file):
                     if "yes" in validation_result.lower():
                         print('\n\n\n\n')
                         print(output)
-                        keep_on = input("Code seems to have worked correctly. Do you want to change or upgrade anything? Either say no or describe what you want: ")
+                        keep_on = input("Code seems to have worked correctly. Do you want to change or upgrade anything? Either say no, describe what you want, or say CHAT to start a conversation with ChatGPT (Convo is used as extra context for coding): ")
                         if keep_on == 'no':
                             os._exit(0)
+                        elif keep_on == 'CHAT':
+                            handle_user_input(code)
                         else:
                             with open(goal_file, 'w+') as file:
                                 file.write(initial_request + '\n\n' + keep_on+'. Here is the code in its current form: \n\n '+code)
