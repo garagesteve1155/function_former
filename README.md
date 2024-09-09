@@ -6,6 +6,11 @@ Automatic generation, testing, and editing of code through the use of ChatGPT (O
 Takes almost all the hassle out of using ChatGPT to help with coding tasks.
 Just create an OpenAI API key, fund it, provide it to the script, and start creating!
 
+Make sure python is installed on your computer.
+Install any modules from the script that you dont already have.
+Run the script, the script will ask you questions from there.
+Finished code will be in the same folder as this script and will be named generated_code.py
+
 Upgrades coming soon:
 - Allow ChatGPT to edit or add individual lines and blocks instead of regenerating the whole code
 - Save code from each attempt to its own file in case you liked something you saw during dev that you want to use later
