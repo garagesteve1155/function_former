@@ -9,8 +9,6 @@ import threading
 import traceback
 import re
 import sys
-import watchdog
-start_flag = 'yes'
 chat_history = []
 try:
     with open('a_k.txt','r') as file:
@@ -148,7 +146,6 @@ def monitor_file_size(log_file_path, max_lines, process):
         print("Log file not found. Please check the path and filename.")
 
 def validate_and_run_code(goal_file):
-    global start_flag
     global chat_history
     error_count = {}
     initial_request1 = input('Please give a thorough and detailed description of the function or script that you want: ')
