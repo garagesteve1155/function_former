@@ -155,9 +155,10 @@ def validate_and_run_code(goal_file):
         with open(filename, 'r') as file:
             code = file.read()
     else:
-        pass
+        print('Creating new script')
     time.sleep(5)
     while True:  # MAIN LOOP
+        print('main loop top')
         try:
 
             if initial_request1 == '':
@@ -171,7 +172,9 @@ def validate_and_run_code(goal_file):
                 initial_request = initial_request1
                 with open(goal_file, 'w+') as file:
                     file.write(initial_request)
+            print('Prompt: ' + str(initial_request))
             if new_or_existing == '1':
+                print('creating new')
                 try:
                     payload = {
                         "model": "gpt-4o",
@@ -187,12 +190,13 @@ def validate_and_run_code(goal_file):
 
 
                     code = response.json()['choices'][0]['message']['content'].strip().replace("'''", "").replace("```", "").replace('\u00B0', '')
-                except:
+                except Exception as e:
+                    print(e)
                     time.sleep(1)
                     continue
-                
             else:
-                pass
+                print('using script from file')
+    
             code_file_path = 'generated_code.py'
             code_file_path_edited = 'edited_code.py'
             # Write the code ensuring UTF-8 encoding
@@ -361,6 +365,7 @@ def validate_and_run_code(goal_file):
                     error_count = {}
                     break
         except Exception as e:
+            print(e)
             print(traceback.format_exc())
             time.sleep(120)  # Wait and retry after a delay in case of exceptions
         else:
