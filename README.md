@@ -2,6 +2,8 @@
 Code for the automated Function Former!
 If you would like to support this free project and Making Made Easy, please consider becoming a member of our Patreon at https://patreon.com/MakingMadeEasy
 
+You have to fund your OpenAI API key first. If you see "choices", fund your API key.
+
 Automatic generation, testing, and editing of Python code through the use of ChatGPT (Other languages and AI models to come).
 Takes almost all the hassle out of using ChatGPT to help with coding tasks.
 Just create an OpenAI API key, fund it, provide it to the script, and start creating!
