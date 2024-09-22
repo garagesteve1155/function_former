@@ -295,6 +295,8 @@ def validate_and_run_code(goal_file):
 
                             output = '\n'.join(lines)  # Join the list of lines into a single string
                        
+                        match = re.search(r'File ".*", line (\d+)\n([^\n]*)\n\s*\^+\n\s*IndentationError: unexpected indent', output)
+
                         # If there's a module not found error, attempt to install the missing module using pip
                         if "No module named" in output:
                             missing_module = re.search(r"No module named '(\w+)'", output)
@@ -343,8 +345,11 @@ def validate_and_run_code(goal_file):
                                         # Write the corrected lines back to the file
                                         with open('edited_code.py', 'w') as code_file:
                                             code_file.writelines(code_lines)
-                                        
+                                        with open('generated_code.py', 'w') as code_file:
+                                            code_file.writelines(code_lines)
+                                        code = '\n'.join(code_lines)
                                         print(f"Line {line_number} has been fixed by removing one leading whitespace.")
+                                        continue
                                     else:
                                         print(f"Line {line_number} does not start with a space or tab, no change made.")
                                 else:
