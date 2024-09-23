@@ -1,17 +1,3 @@
-"""
-Prompt Improvements
-
-Variable fixes
-
-Hardcoded indentation fix (Will need more testing)
-
-Improved output logging from running scripts
-
-Improved data shown on Chat-Coding mode
-"""
-
-
-
 print("Thank you for using Function Former by Making Made Easy! If you would like to support this free project and Making Made Easy, please consider becoming a member of our Patreon at https://patreon.com/MakingMadeEasy ")
 
 import requests
@@ -23,6 +9,7 @@ import threading
 import traceback
 import re
 import sys
+start_time = str(int(time.time()))
 chat_history = []
 try:
     with open('a_k.txt', 'r') as file:
@@ -35,86 +22,27 @@ headers = {
     "Authorization": f"Bearer {api_key}",
     "Content-Type": "application/json"
 }
-code_file_path = 'generated_code.py'
-code_file_path_edited = 'edited_code.py'
+code_file_path = 'generated_code'+start_time+'.py'
 with open('output.log', 'w+') as file:
     file.write('')
 with open('goal.txt', 'w+') as file:
     file.write('')
 
-
-def display_file_contents():
-    last_modified = None
-    filename = 'generated_code.py'
-    while True:
-        try:
-            current_modified = os.path.getmtime(filename)
-            if last_modified is None or current_modified > last_modified:
-                with open(filename, 'r') as file:
-                    contents = file.read()
-                print("\033[H\033[J", end="")  # Clear console screen
-                print(contents)
-                last_modified = current_modified
-            time.sleep(1)  # Check every second
-        except FileNotFoundError:
-            print("File not found. Ensure the file exists.")
-            time.sleep(1)  # Wait a bit before trying again
-        except KeyboardInterrupt:
-            print("Stopping file monitoring.")
-            break
-
-
 def filter_python_lines(lines):
     """ Remove lines that only contain the word 'python'. """
     return [line for line in lines if line.strip().lower() != 'python']
 
-def modify_print_statements(lines):
-    """ Modify print statements to log output to a file, ensuring each logging line starts on a new line. """
-    modified_lines = []
-    for line in lines:
-        stripped_line = line.lstrip()
-        indent = ' ' * (len(line) - len(stripped_line))
 
-        if "print(" in stripped_line:
-            # Keep the original print statement
-            modified_lines.append(indent + stripped_line)
-            # Extract the content inside print()
-            log_content = str(stripped_line.split("print(", 1)[1].rsplit(")", 1)[0])
-            # Prepare the log line with the same level of indentation and ensure it starts on a new line
-            log_line = f'{indent}with open("output.log", "a") as log_file: log_file.write({log_content} + "\\n")\n'
-            modified_lines.append(log_line)
-        else:
-            modified_lines.append(line)
-
-    return modified_lines
-
-def wrap_with_try_except(lines):
-    """ Wrap the code in a try-except block for logging errors, ensuring all lines are correctly indented within the try block. """
-    wrapped_lines = ['import traceback\n', 'try:\n']
-    for line in lines:
-        # Always add an additional four spaces to each line for the try block indentation
-        wrapped_lines.append('    ' + line)
-    wrapped_lines.extend([
-        'except Exception:\n',
-        '    with open("output.log", "a") as log_file:\n',
-        '        traceback.print_exc(file=log_file)\n'
-    ])
-    return wrapped_lines
-
-def instrument_file(input_filename, output_filename):
+def instrument_file():
     # Read the input file
-    with open(input_filename, 'r', encoding='utf-8') as file:
+    with open('generated_code'+start_time+'.py', 'r', encoding='utf-8') as file:
         lines = file.readlines()
 
     # Apply transformations
     lines = filter_python_lines(lines)
-    print('adding try and except stuff')
-    #lines = wrap_with_try_except(lines)
-    print('add print statements and output logging')
-    #lines = modify_print_statements(lines)
 
     # Write the modified lines to the output file, ensuring each line ends properly with a new line
-    with open(output_filename, 'w', encoding='utf-8') as file:
+    with open('generated_code'+start_time+'.py', 'w', encoding='utf-8') as file:
         file.writelines(line if line.endswith('\n') else line + '\n' for line in lines)
 
 
@@ -161,6 +89,7 @@ def validate_and_run_code(goal_file):
     error_count = {}
     initial_request1 = input('Please give a thorough and detailed description of the function or script that you want: ')
     new_or_existing = input('Generate new code or edit an existing file (Say 1 for new or 2 for existing): ')
+    pin_or_whole = input('Pinpoint editing or whole code regeneration editing (Say 1 for pinpoint or 2 for whole code): ')
     if new_or_existing == '2':
         filename = input('Please put the existing python file in the same folder as this script, and then provide the filename here: ')
         og_filename = filename
@@ -235,7 +164,7 @@ def validate_and_run_code(goal_file):
 
 
             # Process and write the instrumented file with UTF-8 encoding
-            instrument_file(code_file_path, code_file_path_edited)
+            instrument_file()
   
 
 
@@ -261,7 +190,7 @@ def validate_and_run_code(goal_file):
                         with open('output.log', 'w') as log_file:
                             try:
                                 process = subprocess.Popen(
-                                    ["python", code_file_path_edited],
+                                    ["python", code_file_path],
                                     stdout=log_file,
                                     stderr=log_file,
                                     creationflags=subprocess.CREATE_NEW_CONSOLE
@@ -294,9 +223,12 @@ def validate_and_run_code(goal_file):
                                 lines.append(line)
 
                             output = '\n'.join(lines)  # Join the list of lines into a single string
-                       
-                        match = re.search(r'File ".*", line (\d+)\n([^\n]*)\n\s*\^+\n\s*IndentationError: unexpected indent', output)
+                        
 
+
+
+
+                        
                         # If there's a module not found error, attempt to install the missing module using pip
                         if "No module named" in output:
                             missing_module = re.search(r"No module named '(\w+)'", output)
@@ -322,17 +254,21 @@ def validate_and_run_code(goal_file):
                                     subprocess.call(chat_response.split(' '))
                                     subprocess.call([sys.executable, '-m', chat_response.split(' ')[0], chat_response.split(' ')[1], chat_response.split(' ')[2]])
                                     print('Finished installing ' + str(module_name))
+                                    continue
                                 else:
-                                    chat_history.append('User declined install of ' + str(module_name) + '. You must choose a different module to use.')
-                            
-                            elif 'IndentationError: unexpected indent' in output:
+                                    chat_history.append()
+                                    initial_request = initial_request+'\n\nUser declined install of ' + str(module_name) + '. You must choose a different module to use.'
+                                    with open(goal_file, 'w+') as file:
+                                        file.write(initial_request)
+                            elif 'unexpected indent' in output:
+                                match = re.search(r'File ".*", line (\d+)\n([^\n]*)\n\s*\^+\n\s*IndentationError: unexpected indent', output)
                                 line_number = int(match.group(1))
                                 problematic_line = match.group(2)
 
                                 print(f"IndentationError found on line {line_number}: {problematic_line}")
 
                                 # Read the original code file
-                                with open('edited_code.py', 'r') as code_file:
+                                with open('generated_code'+start_time+'.py', 'r') as code_file:
                                     code_lines = code_file.readlines()
 
                                 # Check if the line from the error matches the corresponding line in the code file
@@ -342,10 +278,8 @@ def validate_and_run_code(goal_file):
                                         corrected_line = code_lines[line_number - 1][1:]
                                         code_lines[line_number - 1] = corrected_line
                                         
-                                        # Write the corrected lines back to the file
-                                        with open('edited_code.py', 'w') as code_file:
-                                            code_file.writelines(code_lines)
-                                        with open('generated_code.py', 'w') as code_file:
+                                        
+                                        with open('generated_code'+start_time+'.py', 'w') as code_file:
                                             code_file.writelines(code_lines)
                                         code = '\n'.join(code_lines)
                                         print(f"Line {line_number} has been fixed by removing one leading whitespace.")
@@ -359,14 +293,16 @@ def validate_and_run_code(goal_file):
                     except Exception as e:
                         print(e)
 
-                    chat_history.append(initial_request)
-                    chat_history.append(output)
+     
                     
 
                     print('Confirming if code worked or not (PRESS CTRL-C TO STOP THE PROCESS)\n')
-                    validation_prompt = "Im trying to do this: " + initial_request + " with the following script: \n\n " + code + " \n\n It produced this logging output when i ran the script: \n\n " + output + " \n\n If it didnt work, please tell me why it didnt work but you cant say more than one paragraph. If the code doesnt have the required stuff to do what I want it do, then tell what it needs but you cant say more than one paragraph. If it does show basically the correct info on the output and the code looks correct, then say it worked. If it is something that is supposed to run continuously, then specify if the looping is done correctly or not.  As long as the output looks like it is basically working and theres like no errors and the code looks correct then it probably is correct and you can tell chatgpt (the chatgpt that will receive your response) that it can say the word yes. If the output is empty then it did not work correctly. \n\n You can never use placeholder logic. \n\n Your response needs to only be a paragraph or less and say the problem and the definitive solution. Your response must be only a few sentences or less and you cannot provide code in your response, only sentences. If there is still more to add to the code to get it to do what i want, then you cannot say it is working yet. \n\n So your response choices are either YES or EDIT CODE. You must only say your response choice, followed by ~~ with a space on each side, followed by the reasoning for the decision or what needs to be fixed and how to fix it, but you cant say more than one paragraph. If there is an error in output, then include that info in EDIT CODE. If you see any syntax errors in the script, also mention that on your EDIT CODE. And dont forget that you are responsible for determining if code is working decently enough to say yes"
+                    if pin_or_whole == '1':
+                        validation_prompt = "Im trying to do this: " + initial_request + " with the following script: \n\n " + code + " \n\n It produced this logging output when i ran the script: \n\n " + output + " \n\n If the code looks and seems like it works, only say the word YES. If it didnt work, then follow these instructions: \n Make sure you have lots of print debug statements in any code you provide. Like basically for the success or failure of almost every line. \n\n Modify this code: \n\n " + code + " \n\n To have this stuff, abilities, and fixes (YOUR SOLE PURPOSE RIGHT NOW IS TO PROVIDE ALL THE NECESSARY EDITS TO THE CODE TO HAVE THIS STUFF): " + initial_request + " \n\n This is the terminal output from the last time this script was executed so fix any issues you see from this output: \n" + output + " \n\n\n You absolutely literally cannot say anything except the specific lines or sections of corrected code that accomplish the current goal, and they must be said in a way that follows these instructions precisely (no prefacing statements or labels) - your entire response must be in this example format: \n\n ```codeblockstart \n old section of code that my program will automatically search for (Must be the precise original code worded exactly like in the original script so my program can compare this to sections of the original script to find where to put the new code) \n ~~ \n correct line or lines of code that get copied and pasted into my script to make it work (You must include any original code that remains unchanged as well) \n codeblockend```\n\n```codeblockstart \n old section of code that my program will automatically search for (Must be the precise original code worded like in the original script so my program can compare this to sections of the original script to find where to put the new code) \n ~~ \n correct line or lines of code that get copied and pasted into my script to replace the original section of code to make it work (You must include any original code that remains unchanged as well) \n codeblockend```  \n\n\n Only provide the lines that actually need to be changed to accomplish the goal, leave everything else how it is. Like dont regenerate the whole script, just provide the areas that need to be modified. You must follow the formatting example precisely. If tabbing is incorrect, fix it. If changes are necessary, your list of edits must include every necessary change. \n\n You cannot provide the complete script, you must only provide the specific edits. And take into account that the edits are done in the order that you give so if a previous edit includes changing a line that you have to look for in the next edit, then compensate for that on the lines that you search for on the next edit by including what it would be after the previous edit. \n\n And if you think the code is already working properly then just say the word YES. \n\n And remember to follow this formatting template if edits need to be made: \n\n ```codeblockstart \n old section of code that my program will automatically search for (Must be the precise original code worded exactly like in the original script so my program can compare this to sections of the original script to find where to put the new code) \n ~~ \n correct line or lines of code that get copied and pasted into my script to make it work (You must include any original code that remains unchanged as well) \n codeblockend```\n\n```codeblockstart \n old section of code that my program will automatically search for (Must be the precise original code worded like in the original script so my program can compare this to sections of the original script to find where to put the new code) \n ~~ \n correct line or lines of code that get copied and pasted into my script to replace the original section of code to make it work (You must include any original code that remains unchanged as well) \n codeblockend```  \n\n\n You can only edit up to 5 lines of code per index on your list of edits to make, but you can make unlimited total edits in your list."
+                    else:
+                        validation_prompt = "Im trying to do this: " + initial_request + " with the following script: \n\n " + code + " \n\n It produced this logging output when i ran the script: \n\n " + output + " \n\n If the code looks and seems like it works, only say the word YES. If it didnt work, then provide the absolutely complete fixed script with full working logic and no placeholders for anything. \n Make sure you have lots of print debug statements in any code you provide. Like basically for the success or failure of almost every line. \n\n Modify this code: \n\n " + code + " \n\n To have this stuff, abilities, and fixes: " + initial_request + " \n\n This is the terminal output from the last time this script was executed so fix any issues you see from this output: \n" + output + " \n\n\n You absolutely literally cannot say anything except the word YES if it worked, or say only the entire script with no other words or comments or placeholders."
                     validation_payload = {
-                        "model": "gpt-4o-mini",
+                        "model": "gpt-4o",
                         "messages": [
                             {"role": "system", "content": "You are a Python code assistant."},
                             {"role": "user", "content": validation_prompt}
@@ -374,20 +310,13 @@ def validate_and_run_code(goal_file):
                     }
                     validation_response = requests.post("https://api.openai.com/v1/chat/completions", headers=headers, data=json.dumps(validation_payload))
                     validation_result = validation_response.json()['choices'][0]['message']['content'].strip().replace("'''", "").replace("```", "")
-                    chat_history.append(validation_result)
+                
 
 
+     
+                    
 
-                    try:
-                        valid = validation_result.split(' ~~ ')
-                        choice = valid[0]
-                        needs = valid[1]
-                    except:
-                        needs = None
-                        choice = "yes"
-                    print(choice)
-
-                    if choice.lower().strip() == "yes":
+                    if validation_result.lower().strip() == "yes":
                         
                         keep_on = input("\n\nCode seems to have worked correctly. Do you want to change or upgrade anything? Either say no, describe what you want, or say CHAT to start a conversation with ChatGPT (Convo is used as extra context for coding): ")
                         if keep_on == 'no':
@@ -407,7 +336,7 @@ def validate_and_run_code(goal_file):
                                 else:
                                     pass
                                 # chatgpt response to input based on chat_history
-                                prompt = "YOU MUST KEEP YOUR RESPONSE SHORTER THAN A PARAGRAPH! \n\n CHAT HISTORY: " + initial_request + " \n\n OTHER DATA: \n\n I ran into this issue: " + str(needs) + " \n\n CURRENT CODE: \n\n " + code + " \n\n ACTUAL PROMPT: " + user_input
+                                prompt = "YOU MUST KEEP YOUR RESPONSE SHORTER THAN A PARAGRAPH! \n\n Chat History: " + initial_request + " \n\n CURRENT CODE: \n\n " + code + " \n\n The code is doing this: " + str(output) + " \n\n ACTUAL PROMPT: " + user_input
                                 payload = {
                                     "model": "gpt-4o-mini",
                                     "messages": [
@@ -424,6 +353,7 @@ def validate_and_run_code(goal_file):
                                 initial_request = initial_request+'\nchatgpt response to user input: ' + result
                                 with open(goal_file, 'w+') as file:
                                     file.write(initial_request)
+                            continue
                         else:
                             with open(goal_file, 'w+') as file:
                                 file.write(initial_request + '\n\n' + keep_on)
@@ -432,239 +362,298 @@ def validate_and_run_code(goal_file):
 
 
                     else:
-                        if auto_or_chat == '2':
-                            user_in = input('CURRENT CODE:\n\n'+code+'\n\nTERMINAL OUTPUT FROM RUNNING SCRIPT:\n '+output+'\n\nWhat ChatGPT says needs to happen: '+str(needs)+ '\n\nChange choice or go with decision from ChatGPT? Press Enter to go with the decision from ChatGPT, give your own description of what it needs to fix, or say STOP to end code creation: ')
-
-                            if user_in == "STOP":
-                                os._exit(0)
-                            elif user_in == "":
-                                pass
-                            else:
-                                needs = 'What Chatgpt says the script needs: ' + str(needs) + '\nUser Input about this: ' + user_in
-                                edit_loop_count -= 1
-                        else:
-                            print(needs)
-                        edit_loop_count += 1
-                        
-                                         
-                        if edit_loop_count >= 4:
-                            print('\n\n\n\n\n\nEditing still needed after 4 attempts. Regenerating code from scratch.')
-                            edit_loop_count = 0
-                            main_loop_count += 1
-                            if main_loop_count >= 4:
-                                print(('\n' * 50) + str(needs))
-                  
-                                print('Starting chat with user\n')
-                                while True:
-                                    try:
-                                        with open(goal_file, 'r') as file:
-                                            initial_request = file.read().strip()
-                                    except:
-                                        print('no prompt given')
-                                        break
-                                    user_input = input("Enter additional information or say END CHAT to end this chat: ")
-
-                                    if user_input.lower() == 'end chat':
-                                        break
-                                    else:
-                                        pass
-                                    # chatgpt response to input based on chat_history
-                                    prompt = "Chat History: " + initial_request + " \n\n OTHER DATA: \n\n I ran into this issue: " + str(needs) + " \n\n CURRENT CODE: \n\n " + code + " \n\n ACTUAL PROMPT: " + user_input
-                                    payload = {
-                                        "model": "gpt-4o-mini",
-                                        "messages": [
-                                            {"role": "system", "content": "You are a Python code assistant."},
-                                            {"role": "user", "content": prompt}
-                                        ]
-                                    }
-                                    response = requests.post("https://api.openai.com/v1/chat/completions", headers=headers, data=json.dumps(payload))
-                                    result = response.json()['choices'][0]['message']['content'].strip().replace("'''", "").replace("```", "")
-                                    print('Response: ' + result)
-                                    print()
-
-                                    initial_request = initial_request+'\n\nuser input: ' + user_input
-                                    initial_request = initial_request+'\nchatgpt response to user input: ' + result
-                                    with open(goal_file, 'w+') as file:
-                                        file.write(initial_request)
-                                print('Ending chat with user\n')
-                                main_loop_count = 0
-                                if new_or_existing == '2':
-                                    filename = og_filename
-                                else:
-                                    pass
-                                break
-                            else:
-                                if new_or_existing == '2':
-                                    filename = og_filename
-                                else:
-                                    pass
-                                break
-                        else:
-                            print('\n\n\n\n\n\nEditing needed. Getting list of necessary edits')
-
-                        edits_prompt = "Make sure you have lots of print debug statements in any code you provide. Like basically for the success or failure of almost every line. \n\n Modify this code: \n\n " + code + " \n\n To have this stuff, abilities, and fixes: " + needs + '\n'+initial_request+ " \n\n You absolutely literally cannot say anything except the specific lines or sections of corrected code that accomplish the current goal, and they must be said in a way that follows these instructions precisely (no prefacing statements or labels) - your entire response must be in this example format: \n\n ```codeblockstart \n old section of code that is getting replaced (Must be the precise original code worded exactly like in the original script so my program can compare this to sections of the original script to find where to put the new code) \n ~~ \n correct line or lines of code that get copied and pasted into my script to make it work (You must include any original code that remains unchanged as well) \n codeblockend```\n\n```codeblockstart \n old section of code that is getting replaced (Must be the precise original code worded like in the original script so my program can compare this to sections of the original script to find where to put the new code) \n ~~ \n correct line or lines of code that get copied and pasted into my script to replace the original section of code to make it work (You must include any original code that remains unchanged as well) \n codeblockend```  \n\n\n Only provide the lines that actually need to be changed to accomplish the goal, leave everything else how it is. Like dont regenerate the whole script, just provide the areas that need to be modified. You must follow the formatting example precisely. If tabbing is incorrect, fix it."
-                        edits_payload = {
-                            "model": "gpt-4o",
-                            "messages": [
-                                {"role": "system", "content": "You are a Python code assistant."},
-                                {"role": "user", "content": edits_prompt}
-                            ]
-                        }
-                        edits_response = requests.post("https://api.openai.com/v1/chat/completions", headers=headers, data=json.dumps(edits_payload))
-                        edits_result = edits_response.json()['choices'][0]['message']['content']
-                        print('got necessary changes from AI')
-                        code_changes = edits_result.replace('```codeblockstart', '').split("codeblockend```")
-                        del code_changes[len(code_changes)-1]
-
-
-
-
-                        """
-
-
-
-                        #THIS DOESNT SEEM TO HELP SO IT IS COMMENTED OUT FOR NOW
-
-
-
-                        
-                        confirm_prompt = "Make sure you have lots of print debug statements in any code you provide. Like basically for the success or failure of almost every line. \n\n ChatGPT says I should make these chages to my code: \n\n " + '\n'.join(code_changes) + " \n\n To have this stuff, abilities, and fixes: " + needs + '\n'+initial_request+ " \n\n Here is my code that the changes will happen to: \n "+code+" \n\n You absolutely literally cannot say anything except the word GOOD if the edits will work, or if they wont work then you must provide the specific lines or sections of corrected code that accomplish the current goal, and they must be said in a way that follows these instructions precisely (no prefacing statements or labels) - your entire response must be in this example format: \n\n ```codeblockstart \n old section of code that is getting replaced (Must be the precise original code worded exactly like in the original script so my program can compare this to sections of the original script to find where to put the new code) \n ~~ \n correct line or lines of code that get copied and pasted into my script to make it work (You must include any original code that remains unchanged as well) \n codeblockend```\n\n```codeblockstart \n old section of code that is getting replaced (Must be the precise original code worded like in the original script so my program can compare this to sections of the original script to find where to put the new code) \n ~~ \n correct line or lines of code that get copied and pasted into my script to replace the original section of code to make it work (You must include any original code that remains unchanged as well) \n codeblockend```  \n\n\n Only provide the lines that actually need to be changed to accomplish the goal, leave everything else how it is. Like dont regenerate the whole script, just provide the areas that need to be modified. You must follow the formatting example precisely. If tabbing is incorrect, fix it. \n\n So yeah, if the edits I provided in this prompt will work, then just say only the word GOOD, otherwise follow all these instructions. But if it looks like the edits will do basically do good enough then just say the word GOOD. The edits that I have given you in this prompt follow the same formatting as the instructions from this prompt."
-                        confirm_payload = {
-                            "model": "gpt-4o",
-                            "messages": [
-                                {"role": "system", "content": "You are a Python code assistant."},
-                                {"role": "user", "content": confirm_prompt}
-                            ]
-                        }
-                        confirm_response = requests.post("https://api.openai.com/v1/chat/completions", headers=headers, data=json.dumps(confirm_payload))
-                        confirm_result = str(confirm_response.json()['choices'][0]['message']['content'])
-                        if confirm_result.strip().replace(' ','') == "GOOD":
-                            print('Edits are good. Making edits now.')
-                        else:
+                        if pin_or_whole == '1':
                             print('got necessary changes from AI')
-                            code_changes = confirm_result.replace('```codeblockstart', '').split("codeblockend```")
-                            del code_changes[len(code_changes)-1]
-                        """
-
-
-
-
-
-                        
-                        code_index = 0
-                        
-
-                        line_amount = 0
-                        while True:
                             try:
-                                #print(len(code_changes))
-                                if len(code_changes) == 0:
+                                code_changes = validation_result.replace('```codeblockstart', '').replace('```', '').replace('codeblockstart', '').split("codeblockend")
+                                cleaned_code_changes = [line for line in code_changes if line.strip() != ""]
+                                code_changes = cleaned_code_changes
+                            except:
+                                print(traceback.format_exc())
 
-                                    validation_prompt = "Make sure you have lots of print debug statements in any code you provide. Like basically for the success or failure of almost every line. \n\n Modify this code: \n\n " + code + " \n\n To have this stuff, abilities, and fixes: " + needs + " \n\n You absolutely literally cannot say anything except the specific lines or sections of corrected code that accomplish the current goal, and they must be said in a way that follows these instructions precisely (no prefacing statements or labels) - your entire response must be in this example format: \n\n ```codeblockstart \n old section of code that is getting replaced (Must be the precise original code worded exactly like in the original script so my program can compare this to sections of the original script to find where to put the new code) \n ~~ \n correct line or lines of code that get copied and pasted into my script to make it work (You must include any original code that remains unchanged as well) \n codeblockend```\n\n```codeblockstart \n old section of code that is getting replaced (Must be the precise original code worded like in the original script so my program can compare this to sections of the original script to find where to put the new code) \n ~~ \n correct line or lines of code that get copied and pasted into my script to replace the original section of code to make it work (You must include any original code that remains unchanged as well) \n codeblockend```  \n\n\n Only provide the lines that actually need to be changed to accomplish the goal, leave everything else how it is. Like dont regenerate the whole script, just provide the areas that need to be modified. You must follow the formatting example precisely. If tabbing is incorrect, fix it."
-                                    validation_payload = {
-                                        "model": "gpt-4o",
-                                        "messages": [
-                                            {"role": "system", "content": "You are a Python code assistant."},
-                                            {"role": "user", "content": validation_prompt}
-                                        ]
-                                    }
-                                    validation_response = requests.post("https://api.openai.com/v1/chat/completions", headers=headers, data=json.dumps(validation_payload))
-                                    validation_result = validation_response.json()['choices'][0]['message']['content']
-                                    code_changes = validation_result.replace('```codeblockstart', '').split("codeblockend```")
-                                    del code_changes[len(code_changes)-1]
+
+                            if auto_or_chat == '2':
+                                user_in = input('CURRENT CODE:\n\n'+code+'\n\nTERMINAL OUTPUT FROM RUNNING SCRIPT:\n '+output+'\n\nWhat ChatGPT says needs to happen: '+'\n'.join(code_changes)+ '\n\n Press Enter to go with the decision from ChatGPT, say CHAT to talk to ChatGPT, or say STOP to end code creation: ')
+
+                                if user_in == "STOP":
+                                    os._exit(0)
+                                elif user_in == "":
+                                    pass
+                                elif user_in == "CHAT":
+                                    while True:
+                                        try:
+                                            with open(goal_file, 'r') as file:
+                                                initial_request = file.read().strip()
+                                        except:
+                                            print('no prompt given')
+                                            break
+                                        user_input = input("Enter additional information or say END CHAT to end this chat: ")
+
+                                        if user_input.lower() == 'end chat':
+                                            break
+                                        else:
+                                            pass
+                                        # chatgpt response to input based on chat_history
+                                        prompt = "YOU MUST KEEP YOUR RESPONSE SHORTER THAN A PARAGRAPH! \n\n Chat History and code editing goal: " + initial_request + " \n\n CURRENT CODE: \n\n " + code + " \n\n The code is doing this: " + str(output) + " \n\n ChatGpt is suggesting this list of lines to look for and what to replace them with to make the code do what I want: \n "+'\n'.join(code_changes)+" \n\n ACTUAL PROMPT: " + user_input
+                                        payload = {
+                                            "model": "gpt-4o-mini",
+                                            "messages": [
+                                                {"role": "system", "content": "You are a Python code assistant."},
+                                                {"role": "user", "content": prompt}
+                                            ]
+                                        }
+                                        response = requests.post("https://api.openai.com/v1/chat/completions", headers=headers, data=json.dumps(payload))
+                                        result = response.json()['choices'][0]['message']['content'].strip().replace("'''", "").replace("```", "")
+                                        print('Response: ' + result)
+                                        print()
+
+                                        initial_request = initial_request+'\n\nuser input: ' + user_input
+                                        initial_request = initial_request+'\nchatgpt response to user input: ' + result
+                                        with open(goal_file, 'w+') as file:
+                                            file.write(initial_request)
                                     continue
                                 else:
-                                    pass
+                                    edit_loop_count -= 1
+                            else:
+                                pass
+                            edit_loop_count += 1
+                            
+                                             
+                            if edit_loop_count >= 4:
+                                print('\n\n\n\n\n\nEditing still needed after 4 attempts. Regenerating code from scratch.')
+                                edit_loop_count = 0
+                                main_loop_count += 1
+                                if main_loop_count >= 4:
+                                    main_loop_count = 0
+                                    print('Starting chat with user\n')
+                                    while True:
+                                        try:
+                                            with open(goal_file, 'r') as file:
+                                                initial_request = file.read().strip()
+                                        except:
+                                            print('no prompt given')
+                                            break
+                                        user_input = input("Enter additional information or say END CHAT to end this chat: ")
 
+                                        if user_input.lower() == 'end chat':
+                                            break
+                                        else:
+                                            pass
+                                        # chatgpt response to input based on chat_history
+                                        prompt = "YOU MUST KEEP YOUR RESPONSE SHORTER THAN A PARAGRAPH! \n\n Chat History: " + initial_request + " \n\n CURRENT CODE: \n\n " + code + " \n\n The code is doing this: " + str(output) + " \n\n ACTUAL PROMPT: " + user_input
+                                        payload = {
+                                            "model": "gpt-4o-mini",
+                                            "messages": [
+                                                {"role": "system", "content": "You are a Python code assistant."},
+                                                {"role": "user", "content": prompt}
+                                            ]
+                                        }
+                                        response = requests.post("https://api.openai.com/v1/chat/completions", headers=headers, data=json.dumps(payload))
+                                        result = response.json()['choices'][0]['message']['content'].strip().replace("'''", "").replace("```", "")
+                                        print('Response: ' + result)
+                                        print()
 
+                                        initial_request = initial_request+'\n\nuser input: ' + user_input
+                                        initial_request = initial_request+'\nchatgpt response to user input: ' + result
+                                        with open(goal_file, 'w+') as file:
+                                            file.write(initial_request)
                                     
-                                
+                                    print('Ending chat with user\n')
+                                    
+                                    
+                                    break
+                                else:
+                                    
+                                    break
+                            else:
+                                print('\n\n\n\n\n\nEditing needed.')
+
+
+
+
+                                        
+                            code_index = 0
+
+                            while True:
                                 try:
-                                    current_change = code_changes[code_index].split('~~')
-                                except:
-                                    code_changes = []
-                                
-                                
 
-                                old_lines_of_code = "\n".join([line for line in current_change[0].replace("```", "").split('\n') if line.strip() != ""])
-                                new_lines_of_code = "\n".join([line for line in current_change[1].replace("```", "").split('\n') if line.strip() != ""])
-                                old_code_list = old_lines_of_code.split('\n')
-                                new_code_list = new_lines_of_code.split('\n')
-                                code_list = code.split('\n')
-                                # Iterate through the code to find a segment that matches the old_code_list
-                                start_index = -1
-                                for idx in range(len(code_list) - len(old_code_list) + 1):
-                                    segment = code_list[idx:idx + len(old_code_list)]
-                                    adjusted_segment = remove_tabs(segment)
-                                    adjusted_old_code_list = remove_tabs(old_code_list)
-                                    #print('\n\nOLD CODE 2:\n'+'\n'.join(adjusted_old_code_list))
-                                    
-                                    adjusted_segment2 = strip_leading_whitespace(adjusted_segment)
-                                    adjusted_old_code_list2 = strip_leading_whitespace(adjusted_old_code_list)
-                                    #print('\n\nSEGMENT FROM FILE:\n'+'\n'.join(adjusted_segment2).strip().replace(' ',''))
-                                    #print('\n\nADJUSTED OLD CODE:\n'+'\n'.join(adjusted_old_code_list2).strip().replace(' ',''))
-                                    
-                                    if str(adjusted_old_code_list2).strip().replace(' ','') == str(adjusted_segment2).strip().replace(' ',''):
-                                        # Found a match, now adjust new_code_list indentation
-                                        start_index = idx
-                      
 
-                                        # Determine the number of leading spaces in the original segment
-                                        leading_spaces = len(segment[0]) - len(segment[0].lstrip())
+                                    try:
+                                        current_change = code_changes[code_index].split('~~')
+                                    except:
+                                        current_change = []
+                                    old_lines_of_code = "\n".join([line for line in current_change[0].replace("```", "").split('\n') if line.strip() != ""])
+                                    new_lines_of_code = "\n".join([line for line in current_change[1].replace("```", "").split('\n') if line.strip() != ""])
+                                    old_code_list = old_lines_of_code.split('\n')
+                                    new_code_list = new_lines_of_code.split('\n')
+                                    code_list = code.split('\n')
 
-                                        # Determine the minimum existing indentation in new_code_list
-                                        min_new_indent = min(len(line) - len(line.lstrip()) for line in new_code_list if line.strip())
+                                    # Normalize the indentation for comparison
+                                    def normalize_indentation(lines):
+                                        return [line.lstrip() for line in lines]
 
-                                        # Adjust new_code_list indentation
-                                        indented_new_code = [
-                                            ' ' * (leading_spaces + max(0, len(line) - len(line.lstrip()) - min_new_indent)) + line.lstrip()
-                                            for line in new_code_list
-                                        ]
+                                    normalized_old_code_list = normalize_indentation(old_code_list)
 
-                                    
-                                        """
-                                        print('\n\nFound and adjusted match at index:', start_index)
-                                        print('\n\nSEGMENT FROM FILE:\n'+'\n'.join(segment))
-                                        print('NEW CODE:\n'+'\n'.join(indented_new_code))
-                                        """
+                                    # Find where the old code matches, ignoring leading whitespaces
+                                    start_index = -1
+                                    for idx in range(len(code_list) - len(normalized_old_code_list) + 1):
+                                        segment = normalize_indentation(code_list[idx:idx + len(normalized_old_code_list)])
+                                        if segment == normalized_old_code_list:
+                                            start_index = idx
+                                            break
+
+                                    if start_index != -1:
+                                        # Remove the old code lines
+                                        del code_list[start_index:start_index + len(normalized_old_code_list)]
+
+                                        # Insert the new lines of code at the same index
+                                        for i, line in enumerate(new_code_list):
+                                            code_list.insert(start_index + i, line)
+                                        print('\n\n\nREPLACING:\n'+'\n'.join(old_code_list))
+                                        print('\n\nWITH:\n'+'\n'.join(new_code_list))
+                                    code_index += 1
+
+                                    if start_index == -1:
+                                        if code_index >= len(code_changes):
+                                            break
+                                        else:
+                                            continue
+
+                                    if code_index >= len(code_changes):
                                         break
-
-                               
-                                
-                                
-                                code_index += 1
-
-                                #yo = input('\n\n\n\nPress Enter if this looks correct or say what\'s wrong with this fix if it looks wrong.')
-                                if start_index == -1:
+                                except Exception as e:
+                                    print(current_change)
+                                    print(traceback.format_exc())
+                                    time.sleep(10)
+                                    code_index += 1
                                     if code_index >= len(code_changes):
                                         break
                                     else:
                                         continue
 
-                                # Remove old lines and prepare space for new lines
-                                del code_list[start_index:start_index + len(old_code_list)]  # Delete old lines
-                                code_list[start_index:start_index] = ['\n' * len(indented_new_code)]  # Insert empty new lines
 
-                                # Replace empty new lines with actual new lines
-                                code_list[start_index:start_index + len(indented_new_code)] = indented_new_code
 
-                                if code_index >= len(code_changes):
+
+                            
+
+
+                                        
+                            print('EDITING FINISHED')
+                            code = "\n".join([line for line in code_list if line.strip() != ""])
+                            with open(code_file_path, 'w+') as file:
+                                file.write(code.replace('\u00B0', ''))
+                            instrument_file()
+                        else:
+                            print("Generating edited code")
+                            #whole code regen section
+
+
+                       
+
+
+                            if auto_or_chat == '2':
+                                user_in = input('CURRENT CODE:\n\n'+code+'\n\nTERMINAL OUTPUT FROM RUNNING SCRIPT:\n '+output+'\n\nWhat ChatGPT says needs to happen: \n'+validation_result+ '\n\n Press Enter to go with the decision from ChatGPT, say CHAT to talk to ChatGPT, or say STOP to end code creation: ')
+
+                                if user_in == "STOP":
+                                    os._exit(0)
+                                elif user_in == "":
+                                    pass
+                                elif user_in == "CHAT":
+                                    while True:
+                                        try:
+                                            with open(goal_file, 'r') as file:
+                                                initial_request = file.read().strip()
+                                        except:
+                                            print('no prompt given')
+                                            break
+                                        user_input = input("Enter additional information or say END CHAT to end this chat: ")
+
+                                        if user_input.lower() == 'end chat':
+                                            break
+                                        else:
+                                            pass
+                                        # chatgpt response to input based on chat_history
+                                        prompt = "YOU MUST KEEP YOUR RESPONSE SHORTER THAN A PARAGRAPH! \n\n Chat History and code editing goal: " + initial_request + " \n\n CURRENT CODE: \n\n " + code + " \n\n The code is doing this: " + str(output) + " \n\n ChatGpt is suggesting this code to do what I want: \n "+validation_result+" \n\n ACTUAL PROMPT: " + user_input
+                                        payload = {
+                                            "model": "gpt-4o-mini",
+                                            "messages": [
+                                                {"role": "system", "content": "You are a Python code assistant."},
+                                                {"role": "user", "content": prompt}
+                                            ]
+                                        }
+                                        response = requests.post("https://api.openai.com/v1/chat/completions", headers=headers, data=json.dumps(payload))
+                                        result = response.json()['choices'][0]['message']['content'].strip().replace("'''", "").replace("```", "")
+                                        print('Response: ' + result)
+                                        print()
+
+                                        initial_request = initial_request+'\n\nuser input: ' + user_input
+                                        initial_request = initial_request+'\nchatgpt response to user input: ' + result
+                                        with open(goal_file, 'w+') as file:
+                                            file.write(initial_request)
+                                    continue
+                                else:
+                                    edit_loop_count -= 1
+                            else:
+                                pass
+                            edit_loop_count += 1
+                            
+                                             
+                            if edit_loop_count >= 4:
+                                print('\n\n\n\n\n\nEditing still needed after 4 attempts. Regenerating code from scratch.')
+                                edit_loop_count = 0
+                                main_loop_count += 1
+                                if main_loop_count >= 4:
+                                    main_loop_count = 0
+                                    print('Starting chat with user\n')
+                                    while True:
+                                        try:
+                                            with open(goal_file, 'r') as file:
+                                                initial_request = file.read().strip()
+                                        except:
+                                            print('no prompt given')
+                                            break
+                                        user_input = input("Enter additional information or say END CHAT to end this chat: ")
+
+                                        if user_input.lower() == 'end chat':
+                                            break
+                                        else:
+                                            pass
+                                        # chatgpt response to input based on chat_history
+                                        prompt = "YOU MUST KEEP YOUR RESPONSE SHORTER THAN A PARAGRAPH! \n\n Chat History: " + initial_request + " \n\n CURRENT CODE: \n\n " + code + " \n\n The code is doing this: " + str(output) + " \n\n ACTUAL PROMPT: " + user_input
+                                        payload = {
+                                            "model": "gpt-4o-mini",
+                                            "messages": [
+                                                {"role": "system", "content": "You are a Python code assistant."},
+                                                {"role": "user", "content": prompt}
+                                            ]
+                                        }
+                                        response = requests.post("https://api.openai.com/v1/chat/completions", headers=headers, data=json.dumps(payload))
+                                        result = response.json()['choices'][0]['message']['content'].strip().replace("'''", "").replace("```", "")
+                                        print('Response: ' + result)
+                                        print()
+
+                                        initial_request = initial_request+'\n\nuser input: ' + user_input
+                                        initial_request = initial_request+'\nchatgpt response to user input: ' + result
+                                        with open(goal_file, 'w+') as file:
+                                            file.write(initial_request)
+                                    
+                                    print('Ending chat with user\n')
+                                    
+                                    
                                     break
                                 else:
-                                    continue
-                            except Exception as e:
-                                print(current_change)
-                                print(traceback.format_exc())
-                                time.sleep(10)
-                                code_index += 1
-                                if code_index >= len(code_changes):
+                                    
                                     break
-                                else:
-                                    continue
-                        code = "\n".join([line for line in code_list if line.strip() != ""])
-                        with open(code_file_path, 'w+') as file:
-                            file.write(code.replace('\u00B0', ''))
-                        instrument_file(code_file_path, code_file_path_edited)
+                            else:
+                                print('\n\n\n\n\n\nEditing needed.')
+
+                            code = "\n".join([line for line in validation_result.split('\n') if line.strip() != ""])
+                            with open(code_file_path, 'w+') as file:
+                                file.write(code.replace('\u00B0', ''))
+                            instrument_file()
+
+
+                            
                 except Exception as e:
                     print('error in this script now')
                     print(traceback.format_exc())
