@@ -15,7 +15,7 @@ def has_function(script_text: str, name: str) -> bool:
     return any(isinstance(n, ast.FunctionDef) and n.name == name for n in tree.body)
 
 # === Configuration ===
-BASE_MODEL_PATH = "C:/Path/To/Your/Model/Folder/mistral_7b_instruct"
+BASE_MODEL_PATH = "C:/Path/To/Your/Model/Folder/mistral_7b_instruct_v0-3"
 
 # === CUDA + model init (with Overload fallback) ===
 os.environ["PYTORCH_CUDA_ALLOC_CONF"] = "expandable_segments:True"
@@ -4382,4 +4382,5 @@ class ChatGUI:
 
 if __name__ == "__main__":
     ChatGUI().run()
+
 
