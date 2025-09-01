@@ -15,7 +15,7 @@ def has_function(script_text: str, name: str) -> bool:
     return any(isinstance(n, ast.FunctionDef) and n.name == name for n in tree.body)
 
 # === Configuration ===
-BASE_MODEL_PATH = "C:/Path/To/Your/Model/Folder/qwen14b"
+BASE_MODEL_PATH = "C:/Path/To/Your/Model/Folder/qwen2-5_14b_instruct"
 
 # === CUDA + model init ===
 torch.backends.cuda.matmul.allow_tf32 = True
@@ -4511,4 +4511,5 @@ class ChatGUI:
 
 if __name__ == "__main__":
     ChatGUI().run()
+
 
