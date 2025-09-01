@@ -1,25 +1,25 @@
-#FunctionFormer2
+#Function Former
 
-FunctionFormer2 is a self-healing autocoder that turns a high-level goal into a working Python script.
+Function Former V2 is a self-healing autocoder that turns a high-level goal into a working Python script.
 It plans an outline, generates the code section-by-section, runs pre-flight fixes, executes the program in a sandboxed subprocess, and iteratively repairs issues using your feedback or traceback errors.
 
 
 This has 4 versions:
 
-ff2_chatgpt.py — build targeting OpenAI ChatGPT models through the online API - Runs on ANY computer with internet.
+ff_chatgpt.py — build targeting OpenAI ChatGPT models through the online API - Runs on ANY computer with internet.
 
-ff2_mistral7b.py — local, offline build targeting Mistral 7B Instruct v0.3 - Requires around 10GB of RAM, no Graphics Card required. Runs faster if your computer has a Graphics Card, especially if the Graphics Card can fit everything instead of splitting the model between GPU and RAM. 
+ff_mistral7b.py — local, offline build targeting Mistral 7B Instruct v0.3 - Requires around 10GB of RAM, no Graphics Card required. Runs faster if your computer has a Graphics Card, especially if the Graphics Card can fit everything instead of splitting the model between GPU and RAM. 
 
-ff2_qwen14b.py - local, offline build targeting Qwen2.5 14B Instruct - Requires around 25GB of RAM, no Graphics Card required. Like the Mistral version, the more of the model that you can fit on a graphics card, the faster it will run.
+ff_qwen14b.py - local, offline build targeting Qwen2.5 14B Instruct - Requires around 25GB of RAM, no Graphics Card required. Like the Mistral version, the more of the model that you can fit on a graphics card, the faster it will run.
 
-ff2_qwen32b.py - local, offline build targeting Qwen2.5 32B Instruct - Requires around 70GB of RAM, no Graphics Card required. Like the Mistral version, the more of the model that you can fit on a graphics card, the faster it will run.
+ff_qwen32b.py - local, offline build targeting Qwen2.5 32B Instruct - Requires around 70GB of RAM, no Graphics Card required. Like the Mistral version, the more of the model that you can fit on a graphics card, the faster it will run.
 
 
-⚠️ You’ll also need one helper module file placed next to the ff2_*.py file you run:
+⚠️ You’ll also need one helper module file placed next to the ff_*.py file you run:
 
 LLM_Reasoning_Engine.py (small “planning/critique” helper)
 
-This can be found in the LLM_Reasoning_Engine repo on my Github page. Drop the py file in the same folder as ff2_***.py.
+This can be found in the LLM_Reasoning_Engine repo on my Github page. Drop the py file in the same folder as ff_***.py.
 
 
 
@@ -40,7 +40,7 @@ Snapshots: saves versions under ./script_snapshots/ so you can diff the evolutio
 
 ⚙️ Setup
 
-Download your preferred launcher file (The ff2_***.py files).
+Download your preferred launcher file (The ff_***.py files).
 
 Put LLM_Reasoning_Engine.py in the same folder as the launcher you plan to run (Can be found in the LLM_Reasoning_Engine repo on this same Github).
 
@@ -51,7 +51,7 @@ Download ALL of the files for Mistral 7B Instruct v0.3 to a local folder, e.g.:
 C:/models/mistral-7b-instruct-v0.3
 
 
-In a code editor, open ff2_mistral7b.py and set:
+In a code editor, open ff_mistral7b.py and set:
 
 BASE_MODEL_PATH = "C:/models/mistral-7b-instruct-v0.3" (Or wherever your model folder is saved)
 
@@ -65,7 +65,7 @@ Download ALL of the files for Qwen2.5 14B Instruct or Qwen2.5 32B Instruct to a 
 C:/models/qwen2-5_14b_instruct
 C:/models/qwen2-5_32b_instruct
 
-In a code editor, open ff2_qwen14b.py or ff2_qwen32b.py and set:
+In a code editor, open ff_qwen14b.py or ff_qwen32b.py and set:
 
 BASE_MODEL_PATH = "C:/models/qwen2-5_14b_instruct"
 or
@@ -79,9 +79,9 @@ That path should contain all of the downloaded files.
 
 OpenAI / ChatGPT build
 
-For ff2_chatgpt.py:
+For ff_chatgpt.py:
 
-In ff2_chatgpt.py, pick the model name you want to use (e.g., gpt-4o), and then provide your API key.
+Run ff_chatgpt.py, pick the model name you want to use, and then provide your API key.
 
 
 
@@ -116,7 +116,7 @@ Shortcuts: Ctrl+Enter submits text in popups.
 
 Model won’t fit on my computer
 
-Use the Mistral version (Requires only 10gb of ram) or use the ChatGPT version.
+Use the Mistral version (Requires only 10gb of ram) or use the ChatGPT version (runs on any computer but requires internet access and a funded OpenAI API key).
 
 
 No GUI / Tkinter error
